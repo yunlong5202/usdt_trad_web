@@ -1,5 +1,5 @@
 export default {
-  title: 'go-admin后台管理系统',
+  title: 'USDT Gateway',
 
   /**
    * @type {boolean} true | false

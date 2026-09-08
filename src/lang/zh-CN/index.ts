@@ -1,3 +1,4 @@
+import usdt from './usdt'
 import common from './common'
 import layout from './layout'
 import profile from './profile'
@@ -21,4 +22,4 @@ import composables from './composables'
  * drift the first time someone renamed a menu. Chinese always falls through to
  * the database value; see lang/backend.ts.
  */
-export default { common, schedule, devTools, demo, sysTools, profile, layout, route, components, login, dashboard, admin, composables }
+export default { usdt, common, schedule, devTools, demo, sysTools, profile, layout, route, components, login, dashboard, admin, composables }

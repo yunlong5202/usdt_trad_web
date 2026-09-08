@@ -41,3 +41,15 @@ CLAUDE.md
 !.claude/skills/
 .claude/skills/*
 !.claude/skills/new-list-page/
+
+# Local USDT configuration, data and validation artifacts
+.env
+.env.*.local
+*.log
+*.db
+*.db-*
+/data/
+/logs/
+/output/
+/.playwright-cli/
+/config/settings.local*.yml

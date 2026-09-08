@@ -53,8 +53,6 @@ const KNOWN: Record<string, number> = {
   'src/utils/costum.js': 1,
 
   // The application title, which ends up in the browser tab.
-  'src/settings.js': 1,
-  'src/utils/get-page-title.js': 1,
 
   // Fallback titles for the fixed routes. Both already carry a titleKey, so
   // these render only when the pack is missing the key.
@@ -81,7 +79,7 @@ const CJK = /[一-鿿]/
 
 const walk = (dir: string): string[] =>
   readdirSync(dir, { withFileTypes: true }).flatMap(entry => {
-    const path = join(dir, entry.name)
+    const path = join(dir, entry.name).replaceAll('\\', '/')
     if (entry.isDirectory()) return walk(path)
     return /\.(vue|ts|js)$/.test(entry.name) ? [path] : []
   })

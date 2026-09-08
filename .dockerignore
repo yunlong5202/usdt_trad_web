@@ -1,0 +1,12 @@
+.git
+node_modules
+dist
+temp
+.env
+.env.*.local
+*.db
+*.log
+config/settings.local*.yml
+config/settings.dev*.yml
+output
+.playwright-cli

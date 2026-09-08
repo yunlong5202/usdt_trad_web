@@ -1,5 +1,5 @@
 {
-  "name": "go-admin",
+  "name": "usdt-trad-web",
   "version": "3.2.0",
   "description": "A magical vue admin. An out-of-box UI solution for enterprise applications. Newest development stack of vue. Lots of awesome features",
   "author": "https://github.com/wenjianzhang",
@@ -42,10 +42,10 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/go-admin-team/go-admin.git"
+    "url": "git+https://github.com/yunlong5202/usdt_trad_web.git"
   },
   "bugs": {
-    "url": "https://github.com/go-admin-team/go-admin/issues"
+    "url": "https://github.com/yunlong5202/usdt_trad_web/issues"
   },
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.2",
