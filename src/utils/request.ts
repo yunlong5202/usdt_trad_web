@@ -86,9 +86,11 @@ service.interceptors.response.use(
     const { code, msg } = response.data
 
     if (code === 401) {
-      if (location.href.indexOf('login') !== -1) {
+      if (response.config.url?.split('?')[0] === '/api/v1/login') {
+        ElMessage({ message: msg || 'Unauthorized', type: 'error', duration: 5000 })
+        return Promise.reject(reported(new Error(msg || 'Unauthorized')))
+      } else if (location.href.indexOf('login') !== -1) {
         useUserStore().resetToken()
-        location.reload() // 为了重新实例化vue-router对象 避免bug
       } else {
         promptRelogin()
       }

@@ -42,7 +42,7 @@ export default {
   computed: {
     ...mapState(useSystemStore, { appInfo: 'info' }),
     appName() {
-      return (this.appInfo && this.appInfo.sys_app_name) || 'Go Admin'
+      return (this.appInfo && this.appInfo.sys_app_name) || 'USDT Gateway'
     },
     monogram() {
       return this.appName.trim().charAt(0).toUpperCase()

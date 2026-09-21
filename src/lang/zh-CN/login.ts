@@ -1,30 +1,37 @@
-/**
- * The sign-in page.
- *
- * Every Chinese value is byte-for-byte what the interface renders today (PRD
- * R5), down to the punctuation -- the e2e suite asserts on these strings and is
- * not being touched.
- *
- * The ICP filing number in the page footer is deliberately absent: it is a legal
- * registration identifier, not interface copy, so it stays in the template.
- */
 export default {
-  subtitle: '使用管理员账号登录控制台',
+  brand: 'USDT Gateway',
+  businessLabel: '充值业务管理平台',
+  heroTitle: '每一笔充值，都有清晰的去向。',
+  heroDescription: '在同一个工作台管理收款地址、链上确认与订单回调，让日常运营更清楚。',
+  flowAddress: '会员与收款地址',
+  flowAddressHint: '按业务规则分配地址，管理会员绑定关系。',
+  flowConfirm: '订单与链上确认',
+  flowConfirmHint: '查看充值进度，追踪每笔订单的到账状态。',
+  flowNotify: '到账与业务通知',
+  flowNotifyHint: '核对回调结果，让充值状态同步到业务端。',
+  title: '登录管理工作台',
+  subtitle: '使用管理员账号，继续处理充值业务。',
   username: '账号',
-  usernamePlaceholder: '请输入账号',
+  usernamePlaceholder: '请输入管理员账号',
   password: '密码',
   passwordPlaceholder: '请输入密码',
-  captcha: '验证码',
-  captchaPlaceholder: '请输入验证码',
-  captchaRefresh: '点击刷新验证码',
+  captcha: '图形验证码',
+  captchaPlaceholder: '输入右侧字符',
+  captchaRefresh: '点击刷新图形验证码',
+  captchaError: '图形验证码加载失败，请点击右侧重试。',
+  totp: '谷歌验证码',
+  totpPlaceholder: '请输入 6 位动态验证码',
+  totpHint: '打开已绑定的 Google 身份验证器，输入当前的 6 位验证码。',
+  authConfigLoading: '正在确认登录验证方式…',
+  authConfigError: '暂时无法获取登录验证方式，请重试后再登录。',
+  retry: '重新加载',
   submit: '登录',
   submitting: '登录中',
-  forgotPassword: '忘记密码请联系系统管理员重置',
-  /** Alt text for the terminal illustration that carries the left half. */
-  terminalAlt: 'go-admin 启动过程示意',
+  forgotPassword: '忘记密码或无法使用验证器，请联系系统管理员。',
   rules: {
-    username: '用户名不能为空',
-    password: '密码不能为空',
-    captcha: '验证码不能为空'
+    username: '请输入账号',
+    password: '请输入密码',
+    captcha: '请输入图形验证码',
+    totp: '请输入 6 位数字的谷歌验证码'
   }
 }

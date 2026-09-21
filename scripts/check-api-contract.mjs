@@ -20,6 +20,7 @@
 import { readFileSync, readdirSync, existsSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import ts from 'typescript'
 
 const UI = join(dirname(fileURLToPath(import.meta.url)), '..')
 const GO = process.env.GO_ADMIN_PATH ?? join(UI, '..', 'go-admin')
@@ -91,6 +92,7 @@ const MODEL_DIRS = [
   [GO, 'app/demo/models'], // the reference module
   [GO, 'app/jobs/models'], // scheduled jobs
   [GO, 'app/other/models/tools'], // the code generator's own tables
+  [GO, 'app/usdt/service'], // note ledger responses live with the migrated business engine
   // Last, so a base the Go repository still declares itself is the one used.
   // This is where the aliased ones are read from once it has stopped.
   [CORE, CORE_MODELS]
@@ -156,6 +158,26 @@ const MODEL_ALIASES = {
   Product: 'DemoProduct' // the demo module names its struct after its table
 }
 
+// GatewayRow is deliberately generic: the reusable gateway renders several
+// different ledger responses. Resolve it by page, then check each dynamic
+// resource's columns separately below so a union cannot hide a wrong column.
+const GATEWAY_RESOURCE_MODELS = {
+  wallets: 'wallet', deposits: 'deposit', nodes: 'chainNode',
+  transactions: 'chainTransaction', gas: 'gasDistribution',
+  collection: 'collectionCandidate', settings: 'runtimeSettings',
+  notifications: 'notificationEvent', security: 'securitySettings'
+}
+const PAGE_MODELS = {
+  'usdt/GasCandidatePicker.vue': ['wallet'],
+  'usdt/member-addresses/index.vue': ['memberAddressView'],
+  'usdt/GatewayPage.vue': [...Object.values(GATEWAY_RESOURCE_MODELS), 'callbackJob']
+}
+const PAGE_LOCAL_FIELDS = {
+  // collection_selected is a UI checkbox; addresses is the local gas-picker
+  // selection passed to the create form. Neither comes from a response row.
+  'usdt/GatewayPage.vue': ['collection_selected', 'addresses']
+}
+
 /** Where a resource's DTO may live. */
 const DTO_DIRS = [
   'app/admin/service/dto',
@@ -183,7 +205,8 @@ const migratedPages = () => {
     const declared = text.match(/useTable<\s*(\w+)\s*,/)
     if (!declared) continue
     const name = declared[1]
-    found[path.slice(join(UI, 'src/views').length + 1)] = MODEL_ALIASES[name] ?? name
+    const page = path.slice(join(UI, 'src/views').length + 1).replaceAll('\\', '/')
+    found[page] = PAGE_MODELS[page] ?? [MODEL_ALIASES[name] ?? name]
   }
   return found
 }
@@ -254,7 +277,7 @@ const note = (where, kind, keys) => {
 /** Every field name a page reads off a row, in either API style. */
 const rowFieldsIn = text => new Set([
   ...[...text.matchAll(/\b(?:scope\.row|row)\??\.(\w+)/g)].map(m => m[1]),
-  ...[...text.matchAll(/<el-table-column[^>]*?\bprop="(\w+)"/gs)].map(m => m[1])
+  ...[...text.matchAll(/<el-table-column[^>]*?\sprop="(\w+)"/gs)].map(m => m[1])
 ])
 
 const fixtures = readFileSync(join(UI, 'tests/e2e/mocked/fixtures.ts'), 'utf8')
@@ -283,19 +306,21 @@ for (const [name, model] of Object.entries(FIXTURES)) {
 
 const PAGES = migratedPages()
 
-for (const [page, model] of Object.entries(PAGES)) {
+for (const [page, models] of Object.entries(PAGES)) {
   const text = readFileSync(join(UI, 'src/views', page), 'utf8')
-  const fields = fieldsOf(model)
+  const fields = Object.assign({}, ...models.map(model => fieldsOf(model)))
   if (!Object.keys(fields).length) {
     // Loud rather than silently uncovered: either the struct moved, or the page
     // names its rows something new and MODEL_ALIASES needs an entry.
-    problems.push(`${page}\n    useTable declares ${model}, which matches no Go struct`)
+    problems.push(`${page}\n    useTable models ${models.join(', ')} match no Go struct`)
     continue
   }
 
-  note(`${page} -> ${model}`, 'read but not on the model',
-    [...rowFieldsIn(text)].filter(k => !(k in fields) && !ALLOWED.has(k)))
+  note(`${page} -> ${models.join('+')}`, 'read but not on the model',
+    [...rowFieldsIn(text)].filter(k => !(k in fields) && !ALLOWED.has(k) && !(PAGE_LOCAL_FIELDS[page] ?? []).includes(k)))
 
+  if (models.length !== 1) continue // multi-resource ledger queries have no single DTO
+  const model = models[0]
   const accepted = formTagsOf(`${snakeCase(model)}.go`)
   if (!accepted) continue // no DTO for this resource; the row check still ran
 
@@ -307,6 +332,32 @@ for (const [page, model] of Object.entries(PAGES)) {
 
   note(`${page} -> ${snakeCase(model)}.go`, 'sent but not bound by the DTO',
     [...sent].filter(k => !accepted.has(k) && !ALLOWED.has(k)))
+}
+
+// Read the TypeScript schema as syntax, without executing application code.
+// The normal row heuristic cannot see `row[key]` or `:prop="key"` columns.
+const gatewaySchemaPath = join(UI, 'src/views/usdt/schema.ts')
+if (existsSync(gatewaySchemaPath)) {
+  const source = ts.createSourceFile(gatewaySchemaPath, readFileSync(gatewaySchemaPath, 'utf8'), ts.ScriptTarget.Latest, true)
+  const nameOf = node => node && (ts.isIdentifier(node) || ts.isStringLiteral(node)) ? node.text : ''
+  const propertyOf = (object, name) => object.properties.find(property => ts.isPropertyAssignment(property) && nameOf(property.name) === name)
+  const declaration = source.statements.filter(ts.isVariableStatement).flatMap(statement => [...statement.declarationList.declarations]).find(item => nameOf(item.name) === 'resources')
+  if (!declaration?.initializer || !ts.isObjectLiteralExpression(declaration.initializer)) {
+    problems.push('usdt/schema.ts\n    cannot resolve the resources object for API contract validation')
+  } else {
+    for (const resource of declaration.initializer.properties) {
+      if (!ts.isPropertyAssignment(resource) || !ts.isObjectLiteralExpression(resource.initializer)) continue
+      const name = nameOf(resource.name)
+      const model = GATEWAY_RESOURCE_MODELS[name]
+      const columns = propertyOf(resource.initializer, 'columns')?.initializer
+      if (!model || !Object.keys(fieldsOf(model)).length || !columns || !ts.isArrayLiteralExpression(columns)) {
+        problems.push(`usdt/schema.ts ${name}\n    cannot resolve resource columns or Go response model`)
+        continue
+      }
+      const fields = fieldsOf(model)
+      note(`usdt/schema.ts ${name} -> ${model}`, 'column not on the response model', columns.elements.map(nameOf).filter(key => !key || !(key in fields)))
+    }
+  }
 }
 
 for (const page of Object.keys(OPTIONS_PAGES)) {

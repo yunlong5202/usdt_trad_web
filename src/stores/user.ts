@@ -8,6 +8,7 @@ export interface LoginPayload {
   password: string
   code?: string
   uuid?: string
+  totp_code?: string
 }
 
 /** Profile payload returned by GET /api/v1/getinfo */

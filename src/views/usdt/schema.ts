@@ -2,6 +2,14 @@ export interface Field { key: string; type: string; options?: string[] }
 export interface Operation { key: string; url: string; method: string; fields: string[]; row?: boolean; read?: boolean; load?: string; selection?: string; download?: boolean; defaults?: Record<string, unknown> }
 export interface Resource { name: string; url: string; list?: string; paged?: boolean; columns: string[]; query: string[]; operations: Operation[] }
 export const fields: Record<string, Field> = {
+  telegram_mentions: { key: 'telegram_mentions', type: 'mentions' },
+  max_gas_balance: { key: 'max_gas_balance', type: 'text' },
+  assignment_mode: { key: 'assignment_mode', type: 'select', options: ['one_order', 'member_reuse', 'app_reuse'] },
+  app_id: { key: 'app_id', type: 'text' },
+  payer_address: { key: 'payer_address', type: 'text' },
+  underpay_tolerance_mode: { key: 'underpay_tolerance_mode', type: 'select', options: ['rate', 'fixed'] },
+  underpay_tolerance_rate: { key: 'underpay_tolerance_rate', type: 'text' },
+  underpay_tolerance_amount: { key: 'underpay_tolerance_amount', type: 'text' },
   'network': {
     'key': 'network',
     'type': 'select',
@@ -310,6 +318,9 @@ export const resources: Record<string, Resource> = {
       'network',
       'token_balance',
       'gas_balance',
+      'assignment_mode',
+      'bound_member_id',
+      'bound_app_id',
       'status',
       'created_at'
     ],
@@ -381,6 +392,7 @@ export const resources: Record<string, Resource> = {
       'address',
       'status',
       'callback_status',
+      'assignment_mode',
       'created_at'
     ],
     'query': [
@@ -399,6 +411,8 @@ export const resources: Record<string, Resource> = {
           'asset',
           'merchant_order_id',
           'member_id',
+          'assignment_mode',
+          'app_id',
           'amount',
           'callback_url',
           'expire_minutes'
@@ -464,6 +478,9 @@ export const resources: Record<string, Resource> = {
           'token_gas_limit',
           'native_gas_limit',
           'explorer_tx_url',
+          'underpay_tolerance_mode',
+          'underpay_tolerance_rate',
+          'underpay_tolerance_amount',
           'enabled'
         ],
         'method': 'POST',
@@ -529,8 +546,9 @@ export const resources: Record<string, Resource> = {
         'url': '/gas-candidates',
         'fields': [
           'network',
+          'address',
           'min_token_balance',
-          'wallet_status'
+          'max_gas_balance'
         ],
         'method': 'GET',
         'read': true
@@ -620,9 +638,11 @@ export const resources: Record<string, Resource> = {
         'fields': [
           'network',
           'asset',
+          'settlement_wallet',
           'verify_code'
         ],
         'method': 'POST',
+        'load': '/collection-settings',
         'selection': 'addresses',
         'defaults': {
           'force': true
@@ -697,7 +717,8 @@ export const resources: Record<string, Resource> = {
           'gas_low_threshold',
           'notify_address_pool_low',
           'notify_sweep_success',
-          'notify_sweep_failed'
+          'notify_sweep_failed',
+          'telegram_mentions'
         ],
         'method': 'POST',
         'load': '/notification-settings'
@@ -734,6 +755,19 @@ export const resources: Record<string, Resource> = {
         'url': '/notifications/test',
         'fields': [],
         'method': 'POST'
+      },
+      {
+        'key': 'diagnoseNotifications',
+        'url': '/notifications/diagnose',
+        'fields': [],
+        'method': 'POST'
+      },
+      {
+        'key': 'callbackJobs',
+        'url': '/callback-jobs',
+        'fields': ['status'],
+        'method': 'GET',
+        'read': true
       }
     ]
   },

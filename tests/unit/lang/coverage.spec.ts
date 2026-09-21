@@ -64,12 +64,11 @@ const KNOWN: Record<string, number> = {
   'src/main.js': 4,
   'src/directive/permission/permisaction.js': 1,
   'src/directive/waves/waves.js': 3,
-  'src/utils/request.ts': 2,
+  'src/utils/request.ts': 1,
 
   // Trailing `//` comments, mostly: SCSS design notes on the login page and
   // Chinese notes after code elsewhere. Overcounted rather than missed, which
   // is the safe direction for a ratchet.
-  'src/views/login/index.vue': 11,
   'src/views/profile/userAvatar.vue': 5,
   'src/layout/components/Settings/index.vue': 2,
   'src/components/Share/DropdownMenu.vue': 1

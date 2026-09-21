@@ -17,14 +17,13 @@ test.describe('signing in', () => {
     await page.setViewportSize({ width: 1280, height: 720 })
   })
 
-  test('the form arrives filled in, with a captcha to solve', async({ page }) => {
+  test('the form arrives without demo credentials, with a captcha to solve', async({ page }) => {
     const calls = await installLoginMocks(page)
     await page.goto('/#/login')
 
-    // Demo credentials are pre-filled on purpose; the captcha is the only field
-    // a visitor has to supply.
-    await expect(page.locator('input[name=username]')).toHaveValue('admin')
-    await expect(page.locator('input[name=password]')).toHaveValue('123456')
+    // Production login never ships demo credentials.
+    await expect(page.locator('input[name=username]')).toHaveValue('')
+    await expect(page.locator('input[name=password]')).toHaveValue('')
     await expect(page.locator('input[name=code]')).toHaveValue('')
 
     // Rendered, not merely requested: the page binds the payload to <img src>,
@@ -45,6 +44,9 @@ test.describe('signing in', () => {
 
     // A refresh that reuses the previous id would look identical on screen and
     // fail on the server, so the id is what this checks.
+    await page.locator('input[name=username]').fill('admin')
+    await page.locator('input[name=password]').fill('123456')
+    await expect(page.locator('.submit-btn')).toBeEnabled()
     await page.locator('input[name=code]').fill(CAPTCHA_ANSWER)
     await page.locator('.submit-btn').click()
     await expect.poll(() => calls.lastLogin?.uuid).toBe('e2e-captcha-2')
@@ -55,6 +57,9 @@ test.describe('signing in', () => {
     await page.goto('/#/login')
     await expect(page.locator('.captcha-img')).toBeVisible()
 
+    await page.locator('input[name=username]').fill('admin')
+    await page.locator('input[name=password]').fill('123456')
+    await expect(page.locator('.submit-btn')).toBeEnabled()
     await page.locator('input[name=code]').fill(CAPTCHA_ANSWER)
     await page.locator('.submit-btn').click()
 
@@ -74,6 +79,9 @@ test.describe('signing in', () => {
     await page.goto('/#/login')
     await expect(page.locator('.captcha-img')).toBeVisible()
 
+    await page.locator('input[name=username]').fill('admin')
+    await page.locator('input[name=password]').fill('123456')
+    await expect(page.locator('.submit-btn')).toBeEnabled()
     await page.locator('input[name=code]').fill(CAPTCHA_ANSWER)
     await page.locator('.submit-btn').click()
 
@@ -95,6 +103,9 @@ test.describe('signing in', () => {
     await page.goto('/#/login?redirect=/admin/sys-user')
     await expect(page.locator('.captcha-img')).toBeVisible()
 
+    await page.locator('input[name=username]').fill('admin')
+    await page.locator('input[name=password]').fill('123456')
+    await expect(page.locator('.submit-btn')).toBeEnabled()
     await page.locator('input[name=code]').fill(CAPTCHA_ANSWER)
     await page.locator('.submit-btn').click()
 
@@ -106,6 +117,9 @@ test.describe('signing in', () => {
     await page.goto('/#/login')
     await expect(page.locator('.captcha-img')).toBeVisible()
 
+    await page.locator('input[name=username]').fill('admin')
+    await page.locator('input[name=password]').fill('123456')
+    await expect(page.locator('.submit-btn')).toBeEnabled()
     await page.locator('input[name=code]').fill('0000')
     await page.locator('.submit-btn').click()
 
@@ -119,15 +133,51 @@ test.describe('signing in', () => {
     await expect(page.locator('.submit-btn')).toBeEnabled()
     await expect(page.locator('.submit-btn')).toHaveText('登录')
   })
+
+  test('an invalid Google code stays visible and a fresh code can be retried', async({ page }) => {
+    const calls = await installLoginMocks(page)
+    await page.route('**/api/v1/usdt/auth-config*', route => route.fulfill({
+      json: { code: 200, data: { totp_enabled: route.request().url().includes('username=admin') }}
+    }))
+    let rejected = 0
+    await page.route('**/api/v1/login', async route => {
+      const payload = route.request().postDataJSON()
+      if (payload.totp_code !== '123456') {
+        rejected++
+        await route.fulfill({ json: { code: 401, msg: '谷歌验证码错误', data: null }})
+        return
+      }
+      await route.fallback()
+    })
+    await page.goto('/#/login')
+    await page.locator('input[name=username]').fill('admin')
+    await page.locator('input[name=password]').fill('123456')
+    await expect(page.locator('input[name=totp_code]')).toBeVisible()
+    await page.locator('input[name=code]').fill(CAPTCHA_ANSWER)
+    await page.locator('input[name=totp_code]').fill('000000')
+    await page.locator('.submit-btn').click()
+
+    await expect(page.locator('.el-message--error')).toContainText('谷歌验证码错误')
+    await expect(page.locator('input[name=username]')).toHaveValue('admin')
+    await expect(page.locator('input[name=password]')).toHaveValue('123456')
+    await expect(page.locator('input[name=code]')).toHaveValue('')
+    await expect(page.locator('input[name=totp_code]')).toHaveValue('')
+    await expect.poll(() => calls.captcha).toBe(2)
+    expect(rejected).toBe(1)
+    await expect(page.locator('.submit-btn')).toBeEnabled()
+
+    await page.locator('input[name=code]').fill(CAPTCHA_ANSWER)
+    await page.locator('input[name=totp_code]').fill('123456')
+    await page.locator('.submit-btn').click()
+    await expect(page).toHaveURL(/#\/(dashboard)?$/)
+    expect(calls.lastLogin?.totp_code).toBe('123456')
+  })
 })
 
 /**
  * The same page on a phone.
  *
- * Its layout is two halves side by side: a terminal animation and the form.
- * Stacked, the terminal keeps its natural height -- eight lines of code, 493px
- * of a 812px screen -- and pushes the form, which is the only part with a job,
- * into the bottom third.
+ * The business introduction gives way to the form at phone widths.
  */
 test.describe('signing in on a phone', () => {
   const PHONE = { width: 375, height: 812 }
@@ -157,7 +207,7 @@ test.describe('signing in on a phone', () => {
     expect(scrolls, 'the login form scrolls').toBe(false)
   })
 
-  test('the terminal is still there on a desktop', async({ page }) => {
+  test('the deposit workflow introduces the workspace on a desktop', async({ page }) => {
     await installLoginMocks(page)
     await page.setViewportSize({ width: 1440, height: 900 })
     await page.goto('/#/login')
@@ -165,6 +215,6 @@ test.describe('signing in on a phone', () => {
 
     // It is the page's main visual where there is room for it.
     await expect(page.locator('.stage')).toBeVisible()
-    await expect(page.locator('.term')).toBeVisible()
+    await expect(page.locator('.payment-flow')).toBeVisible()
   })
 })

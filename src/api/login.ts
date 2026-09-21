@@ -6,9 +6,18 @@ import type { AppInfo } from '@/stores/system'
 
 /** Captcha image, as a data URI, plus the id to send back with it. */
 export function getCodeImg() {
-  return request<ApiResponse<{ id: string, data: string }>>({
+  return request<ApiResponse<string> & { id: string }>({
     url: '/api/v1/captcha',
     method: 'get'
+  })
+}
+
+/** Public login requirements; no keys or account details are returned. */
+export function getAuthConfig(username: string) {
+  return request<ApiResponse<{ totp_enabled: boolean }>>({
+    url: '/api/v1/usdt/auth-config',
+    method: 'get',
+    params: { username }
   })
 }
 

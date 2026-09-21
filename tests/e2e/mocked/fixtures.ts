@@ -1182,6 +1182,10 @@ export async function installLoginMocks(page: Page) {
 
   await installSessionMocks(page, calls)
 
+  await page.route('**/api/v1/usdt/auth-config*', async route => {
+    await route.fulfill(json({ code: 200, data: { totp_enabled: false }}))
+  })
+
   await page.route('**/api/v1/app-config*', async route => {
     await route.fulfill(json({
       code: 200,

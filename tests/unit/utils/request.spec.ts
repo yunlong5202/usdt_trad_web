@@ -58,20 +58,24 @@ vi.mock('element-plus', () => ({
 import '@/utils/request'
 
 /** An axios response carrying the given envelope. */
-const envelope = (body: Partial<ApiResponse>): AxiosResponse<ApiResponse> => ({
+const envelope = (body: Partial<ApiResponse>, url = '/api/v1/usdt/deposits'): AxiosResponse<ApiResponse> => ({
   data: { code: 200, msg: 'ok', data: null, ...body } as ApiResponse,
   status: 200,
   statusText: 'OK',
   headers: {},
-  config: {}
+  config: { url }
 } as AxiosResponse<ApiResponse>)
 
 describe('request response interceptor', () => {
+  const reload = vi.fn()
   beforeEach(() => {
     message.mockClear()
     confirm.mockClear()
     resetToken.mockClear()
+    reload.mockClear()
+    vi.stubGlobal('location', { href: 'http://localhost/#/dashboard', reload })
   })
+  afterEach(() => { vi.unstubAllGlobals() })
 
   it('resolves with the envelope, not the axios response', async() => {
     const out = await Promise.resolve(captured.fulfilled!(envelope({ code: 200, data: { id: 1 }, msg: 'ok' })))
@@ -113,6 +117,7 @@ describe('request response interceptor', () => {
       expect(error).toBeInstanceOf(Error)
       expect(confirm).toHaveBeenCalledTimes(1)
       expect(resetToken).toHaveBeenCalled()
+      expect(reload).toHaveBeenCalledTimes(1)
     })
 
     // This branch used to `return false`, which resolves -- so an expired session
@@ -123,6 +128,33 @@ describe('request response interceptor', () => {
 
       expect(settled).toBeInstanceOf(Error)
       expect(resetToken).toHaveBeenCalled()
+    })
+  })
+
+  describe('sign-in rejection', () => {
+    it('reports an invalid TOTP without reloading or resetting the form session', async() => {
+      vi.stubGlobal('location', { href: 'http://localhost/#/login', reload })
+      const error = await Promise.resolve(captured.fulfilled!(envelope({ code: 401, msg: '谷歌验证码错误' }, '/api/v1/login')))
+        .catch((e: Error & { reported?: boolean }) => e)
+
+      expect(error).toMatchObject({ message: '谷歌验证码错误', reported: true })
+      expect(message).toHaveBeenCalledWith(expect.objectContaining({ type: 'error', message: '谷歌验证码错误' }))
+      expect(reload).not.toHaveBeenCalled()
+      expect(confirm).not.toHaveBeenCalled()
+      expect(resetToken).not.toHaveBeenCalled()
+
+      // The next attempt is processed normally, without a document reload.
+      const retry = await Promise.resolve(captured.fulfilled!(envelope({ code: 200, data: { accepted: true }}, '/api/v1/login')))
+      expect(retry).toMatchObject({ code: 200, data: { accepted: true }})
+    })
+
+    it('still clears a stale token on a protected request while already on the login page', async() => {
+      vi.stubGlobal('location', { href: 'http://localhost/#/login', reload })
+      await expect(Promise.resolve(captured.fulfilled!(envelope({ code: 401, msg: 'expired' }))))
+        .rejects.toThrow('Unauthorized')
+      expect(resetToken).toHaveBeenCalledTimes(1)
+      expect(confirm).not.toHaveBeenCalled()
+      expect(reload).not.toHaveBeenCalled()
     })
   })
 
