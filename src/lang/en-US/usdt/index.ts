@@ -1,4 +1,13 @@
 export default {
+  gasContracts: {
+    title: 'Gas batch distribution contracts',
+    hint: 'BSC and TRON each use their own contract address. This shows the saved configuration; transaction results determine on-chain execution.',
+    noAccess: 'Business settings permission is required to view or edit distribution contracts. Contact your administrator.',
+    address: 'Current contract address', configured: 'Configured', unconfigured: 'Not configured', loadFailed: 'Could not load',
+    edit: 'Edit {chain} contract', editAddress: '{chain} contract address', save: 'Save {chain}',
+    saveHint: 'Only this chain’s contract address is changed. Other settings retain their current server values. Check the network and deployed contract.',
+    saved: '{chain} contract address saved', invalidAddress: 'Enter a valid {chain} contract address'
+  },
   mentions: {
     deliveryFailed: 'Notification delivery was incomplete: {sent} sent, {failed} failed. Check the returned details.',
     hint: 'Choose Telegram users to mention for each event. Leave blank to send without mentions.',

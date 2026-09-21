@@ -1,4 +1,13 @@
 export default {
+  gasContracts: {
+    title: 'GAS 批量分发合约',
+    hint: 'BSC 与 TRON 分别使用各自的合约地址。这里显示已保存的配置状态，链上执行结果以交易为准。',
+    noAccess: '查看和修改分发合约需要业务设置权限，请联系管理员。',
+    address: '当前合约地址', configured: '已配置', unconfigured: '未配置', loadFailed: '读取失败',
+    edit: '编辑 {chain} 合约', editAddress: '{chain} 合约地址', save: '保存 {chain}',
+    saveHint: '仅保存这条链的合约地址；其余配置保持服务端当前值。请核对目标网络和已部署的合约。',
+    saved: '{chain} 合约地址已保存', invalidAddress: '请输入有效的 {chain} 合约地址'
+  },
   mentions: {
     deliveryFailed: '通知未全部发送成功：成功 {sent}，失败 {failed}。请查看返回详情。',
     hint: '按事件设置需要提及的 Telegram 用户。留空表示该事件不提及用户。',

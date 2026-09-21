@@ -37,6 +37,25 @@ export function updateRuntimeSettings(data: RuntimeSettings) {
   return request<ApiResponse<RuntimeSettings>>({ url: `${base}/runtime-settings`, method: 'POST', data })
 }
 
+export interface BatchContractSettings {
+  enabled: boolean
+  contract_address: string
+  fee_per_address_wei: string
+  fee_collector: string
+  max_batch_size: number
+  supports_native: boolean
+  source_url: string
+  note: string
+}
+
+export function getBatchContractSettings() {
+  return request<ApiResponse<BatchContractSettings>>({ url: `${base}/batch-contract-settings`, method: 'GET' })
+}
+
+export function updateBatchContractSettings(data: BatchContractSettings) {
+  return request<ApiResponse<BatchContractSettings>>({ url: `${base}/batch-contract-settings`, method: 'POST', data })
+}
+
 export function getTotpStatus() {
   return request<ApiResponse<TotpStatus>>({ url: `${base}/security/totp`, method: 'GET' })
 }

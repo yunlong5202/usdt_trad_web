@@ -1,5 +1,6 @@
 <template>
   <PageContainer>
+    <GasContractSettings v-if="resource === 'gas'" />
     <el-alert v-if="loadError" :title="loadError" type="error" :closable="false" class="gateway-load-error" />
     <ProTable v-if="config.list" :table="table" :selection="resource !== 'collection'" :row-key="resource === 'nodes' ? 'network' : resource === 'collection' ? 'address' : 'id'">
       <template v-if="config.query.length" #search>
@@ -96,6 +97,7 @@ import { useTable } from '@/composables'
 import { gatewayRequest, type GatewayRow } from '@/api/usdt'
 import GatewayField from './GatewayField.vue'
 import GasCandidatePicker from './GasCandidatePicker.vue'
+import GasContractSettings from './GasContractSettings.vue'
 import { resources, fields, type Operation } from './schema'
 import { asReportedError } from '@/utils/request'
 

@@ -16,7 +16,7 @@ const optionStub = defineComponent({ name: 'ElOption', props: { value: { type: S
 const dropdownStub = defineComponent({ name: 'ElDropdown', emits: ['command'], template: '<div><slot /><slot name="dropdown" /></div>' })
 const wrappers: ReturnType<typeof mount>[] = []
 const render = async(resource: string) => {
-  const wrapper = mount(GatewayPage, { props: { resource }, global: { plugins: [ElementPlus], directives: { permisaction: {}}, stubs: { ProTable: tableStub, GasCandidatePicker: true, ElSelect: selectStub, ElOption: optionStub, ElDropdown: dropdownStub, ElDropdownMenu: { template: '<div><slot /></div>' }, ElDropdownItem: { template: '<span><slot /></span>' }, teleport: true }}})
+  const wrapper = mount(GatewayPage, { props: { resource }, global: { plugins: [ElementPlus], directives: { permisaction: {}}, stubs: { ProTable: tableStub, GasCandidatePicker: true, GasContractSettings: true, ElSelect: selectStub, ElOption: optionStub, ElDropdown: dropdownStub, ElDropdownMenu: { template: '<div><slot /></div>' }, ElDropdownItem: { template: '<span><slot /></span>' }, teleport: true }}})
   wrappers.push(wrapper)
   await flushPromises()
   return wrapper
